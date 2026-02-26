@@ -1,8 +1,11 @@
 package com.study.authentication.service;
 
+import com.study.authentication.dto.AuthResponseDto;
 import com.study.authentication.dto.CredentialsDto;
 import com.study.authentication.dto.LoginResponseDto;
+import com.study.authentication.dto.RegisterRequestDto;
 import com.study.authentication.entity.Credentials;
+import com.study.authentication.entity.Role;
 import com.study.authentication.repository.CredentialsRepository;
 import com.study.authentication.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +24,26 @@ public class AuthService {
         this.credentialsRepository = credentialsRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+    }
+
+    public AuthResponseDto register(RegisterRequestDto request) {
+
+        if (credentialsRepository.existsByLogin(request.getLogin())) {
+            throw new RuntimeException("User already exists");
+        }
+
+        Credentials credentials = new Credentials();
+        credentials.setUserId(request.getUserId());
+        credentials.setLogin(request.getLogin());
+        credentials.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        credentials.setRole(Role.USER);
+
+        credentialsRepository.save(credentials);
+
+        return new AuthResponseDto(
+                credentials.getUserId(),
+                credentials.getLogin()
+        );
     }
 
     public LoginResponseDto login(String login, String password) {
