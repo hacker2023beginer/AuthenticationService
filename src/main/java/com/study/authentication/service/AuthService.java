@@ -6,6 +6,7 @@ import com.study.authentication.dto.LoginResponseDto;
 import com.study.authentication.dto.RegisterRequestDto;
 import com.study.authentication.entity.Credentials;
 import com.study.authentication.entity.Role;
+import com.study.authentication.exception.AuthServiceException;
 import com.study.authentication.repository.CredentialsRepository;
 import com.study.authentication.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,7 +30,7 @@ public class AuthService {
     public AuthResponseDto register(RegisterRequestDto request) {
 
         if (credentialsRepository.existsByLogin(request.getLogin())) {
-            throw new RuntimeException("User already exists");
+            throw new AuthServiceException("User already exists");
         }
 
         Credentials credentials = new Credentials();
@@ -48,10 +49,10 @@ public class AuthService {
 
     public LoginResponseDto login(String login, String password) {
         Credentials credentials = credentialsRepository.findByLogin(login)
-                .orElseThrow(() -> new RuntimeException("Invalid login or password"));
+                .orElseThrow(() -> new AuthServiceException("Invalid login or password"));
 
         if (!passwordEncoder.matches(password, credentials.getPasswordHash())) {
-            throw new RuntimeException("Invalid login or password");
+            throw new AuthServiceException("Invalid login or password");
         }
 
         String access = jwtService.generateAccessToken(credentials.getUserId(), credentials.getRole().name());
@@ -62,13 +63,13 @@ public class AuthService {
 
     public void saveCredentials(CredentialsDto dto) {
         String hash = passwordEncoder.encode(dto.getPassword());
-
-        Credentials credentials = new Credentials(
-                dto.getUserId(),
-                dto.getLogin(),
-                hash,
-                dto.getRole()
-        );
+        Credentials credentials = credentialsRepository
+                .findByLogin(dto.getLogin())
+                .orElseGet(Credentials::new);
+        credentials.setUserId(dto.getUserId());
+        credentials.setLogin(dto.getLogin());
+        credentials.setPasswordHash(hash);
+        credentials.setRole(dto.getRole());
 
         credentialsRepository.save(credentials);
     }
