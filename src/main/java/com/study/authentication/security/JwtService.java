@@ -21,8 +21,6 @@ public class JwtService {
     @PostConstruct
     public void init() {
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
-        System.out.println("SECRET: " + secret);
-        System.out.println("AUTH-SERVICE KEY: " + java.util.Base64.getEncoder().encodeToString(key.getEncoded()));
     }
 
 
