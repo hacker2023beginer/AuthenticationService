@@ -61,6 +61,24 @@ public class AuthService {
         return new LoginResponseDto(access, refresh);
     }
 
+    public LoginResponseDto refreshToken(String refreshToken) {
+        if (refreshToken == null || !jwtService.isTokenValid(refreshToken)) {
+            throw new RuntimeException("Refresh token is invalid or expired");
+        }
+
+        Long userId = jwtService.extractUserId(refreshToken);
+        String role = jwtService.extractRole(refreshToken);
+
+        String newAccessToken = jwtService.generateAccessToken(userId, role);
+        String newRefreshToken = jwtService.generateRefreshToken(userId, role);
+
+        LoginResponseDto response = new LoginResponseDto();
+        response.setAccessToken(newAccessToken);
+        response.setRefreshToken(newRefreshToken);
+
+        return response;
+    }
+
     public void saveCredentials(CredentialsDto dto) {
         String hash = passwordEncoder.encode(dto.getPassword());
         Credentials credentials = credentialsRepository
